@@ -89,19 +89,18 @@
       <input
         type="hidden"
         name="first_name"
-        value="ID Card Test Auto Owners"
+        value="ID Card Test Demo Auto Owners New"
       />
-      <input type="hidden" name="last_name" value="Auto Owners" />
+      <input type="hidden" name="last_name" value="Test Demo" />
       <input type="hidden" name="status" value="New" />
-      <input type="hidden" name="phone" value="2843683655" />
+      <input type="hidden" name="phone" value="28436836129" />
       <input type="hidden" name="lead_source" value="Web Form" />
       <input type="hidden" id="formDataJson" name="Form_Captured_Data__c" value="" />
-      <input type="hidden" name="company" value="Caelius Test Auto Owners New" />
-<!--<input type="hidden" name="debug" value=1>                              
-<input type="hidden" name="debugEmail" value="annie.rawal@caeliusconsulting.com">-->
+      <input type="hidden" id="missingFormData" name="Form_Missing_Data__c" value="" />
+      <input type="hidden" name="company" value="Caelius Test Safeco New" />
+    <input type="hidden" name="debugEmail"  value="annie.rawal@caeliusconsulting.com">
           <input type="hidden" name="delete_Action_Form__c" value="1" />
-                        <input type="hidden" name="Carrier__c" value ="Auto Owners">
-
+                    <input type="hidden" name="Carrier__c" value ="Auto Owners">
 
 
       <input
@@ -158,7 +157,7 @@
     </div>
 
     <script>
-     document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("mainForm");
   const reviewBtn = document.getElementById("reviewBtn");
   const dialog = document.getElementById("dialog");
@@ -173,17 +172,25 @@
     { id: "00NU7000005zuX3", label: "Policy Number" }
   ];
 
-  // Add hidden input for storing JSON form data (create this in your form)
   let formDataJsonInput = document.getElementById("formDataJson");
   if (!formDataJsonInput) {
     formDataJsonInput = document.createElement("input");
     formDataJsonInput.type = "hidden";
     formDataJsonInput.id = "formDataJson";
-    formDataJsonInput.name = "Form_Captured_Data__c"; // Replace with your Salesforce field API name
+    formDataJsonInput.name = "Form_Captured_Data__c";
     form.appendChild(formDataJsonInput);
   }
 
-  // Function to validate required fields and return missing labels
+  let missingFormDataInput = document.getElementById("missingFormData");
+  if (!missingFormDataInput) {
+    missingFormDataInput = document.createElement("input");
+    missingFormDataInput.type = "hidden";
+    missingFormDataInput.id = "missingFormData";
+    missingFormDataInput.name = "Form_Missing_Data__c";
+    form.appendChild(missingFormDataInput);
+  }
+
+  // Validate required fields
   function validateFields() {
     const missing = [];
     fieldData.forEach((field) => {
@@ -201,50 +208,35 @@
     return missing;
   }
 
-  // On clicking review button
- reviewBtn.addEventListener("click", () => {
-  const missing = validateFields();
+  // Main logic for review button
+  reviewBtn.addEventListener("click", () => {
+    const missing = validateFields();
 
-  const missingData = [];
-  const completedData = [];
+    const completedData = [];
+    fieldData.forEach(field => {
+      const input = document.getElementById(field.id);
+      const value = input.value.trim();
+      if (!missing.includes(field.label) && value) {
+        completedData.push(`${field.label} = ${value}`);
+      }
+    });
 
-  fieldData.forEach(field => {
-    const input = document.getElementById(field.id);
-    const value = input.value.trim();
+    // Store completed data (field = value, line by line) in form captured data
+    formDataJsonInput.value = completedData.join('\n');
 
-    if (missing.includes(field.label)) {
-      missingData.push({ field: field.label, value: value || "" });
+    // Store missing fields, one per line
+    missingFormDataInput.value = missing.join('\n');
+
+    if (missing.length) {
+      dialogTitle.textContent = "Below Mandatory Fields are missing and the Team will contact you shortly.";
+      missingFieldsList.innerHTML = missing.map(f => `<li>${f}</li>`).join("");
     } else {
-      completedData.push({ field: field.label, value: value });
+      dialogTitle.textContent = "All mandatory fields are completed. Ready to submit your request?";
+      missingFieldsList.innerHTML = "";
     }
+
+    dialog.classList.remove("hidden");
   });
-
-  // Store object with two arrays in hidden input as JSON string
-  const formDataObj = {
-    MissingData: missingData,
-    CompletedData: completedData
-  };
-
-formDataJsonInput.value =
-  "Missing Data - \n[" +
-    missingData.map(d => `${d.field}${d.value ? " = " + d.value : ""}`).join(",\n") +
-  "]\nCompleted Data-\n [" +
-    completedData.map(d => `${d.field} = ${d.value}`).join(",\n") +
-  "]";
-  
-  if (missing.length) {
-    dialogTitle.textContent = "Below Mandatory Fields are missing and the Team will contact you shortly.";
-    missingFieldsList.innerHTML = missing.map(f => `<li>${f}</li>`).join("");
-  } else {
-    dialogTitle.textContent = "All mandatory fields are completed. Ready to submit your request?";
-    missingFieldsList.innerHTML = "";
-  }
-
-  dialog.classList.remove("hidden");
-});
-
-
-
 
   editBtn.addEventListener("click", () => {
     dialog.classList.add("hidden");
@@ -255,7 +247,6 @@ formDataJsonInput.value =
     form.submit();
   });
 
-  // Close dialog on clicking outside or pressing Escape
   window.addEventListener("click", (e) => {
     if (e.target === dialog) {
       dialog.classList.add("hidden");
